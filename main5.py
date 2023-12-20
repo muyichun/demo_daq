@@ -1,4 +1,5 @@
 import nidaqmx
+from nidaqmx.constants import AcquisitionType, Edge
 from pylab import *
 from matplotlib.animation import FuncAnimation
 plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
@@ -26,6 +27,8 @@ def update(frame, arg1):
     with nidaqmx.Task() as task:
         # 选择指定串口
         task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
+        task.timing.cfg_samp_clk_timing(2E+6, u'', Edge.FALLING, AcquisitionType.CONTINUOUS)
+        task.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", Edge.FALLING)
         # 实时采集并绘图采集点
         y_axis_amplitude_change = np.round(task.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
         line.set_ydata(y_axis_amplitude_change)

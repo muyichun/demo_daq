@@ -31,3 +31,5 @@ ani = FuncAnimation(
                    )
 plt.show()
 # ani.save("animation.gif", fps=25, writer="pillow")
+
+### 重构一下，用函数的方式，封装代码
