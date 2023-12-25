@@ -1,5 +1,6 @@
 import nidaqmx
 from pylab import *
+import pprint
 from matplotlib.animation import FuncAnimation
 plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
 plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
@@ -31,4 +32,6 @@ with nidaqmx.Task() as task:
     print(task.triggers.pause_trigger)
 
 # 展示界面
-plt.show()
+# plt.show()
+
+print(1,2,3123)

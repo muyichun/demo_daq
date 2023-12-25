@@ -7,10 +7,11 @@ plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
 
 # 定义初始常量
 COLLECTION_QUANTITY = 5000
-x_axis_time = [i for i in range(COLLECTION_QUANTITY)]
-y_axis_amplitude = np.zeros(COLLECTION_QUANTITY)
+
 
 # 画布基本信息
+x_axis_time = [i for i in range(COLLECTION_QUANTITY)]
+y_axis_amplitude = np.zeros(COLLECTION_QUANTITY)
 fig = plt.figure(figsize=(12.8, 7.2))
 # ax = plt.subplots()
 line, = plt.plot(x_axis_time, y_axis_amplitude)
@@ -27,6 +28,7 @@ def update(frame, arg1):
     with nidaqmx.Task() as task:
         # 选择指定串口
         task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
+        # 选择时钟同步串口
         task.timing.cfg_samp_clk_timing(2E+6, u'', Edge.FALLING, AcquisitionType.CONTINUOUS)
         task.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", Edge.FALLING)
         # 实时采集并绘图采集点
