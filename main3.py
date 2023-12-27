@@ -1,38 +1,41 @@
 import nidaqmx
+import h5py
+import os
 from pylab import *
+from nidaqmx.constants import AcquisitionType, Edge
 from matplotlib.animation import FuncAnimation
 plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
 plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
 
-# 定义初始常量
-COLLECTION_QUANTITY = 5000
-x_axis_time = [i for i in range(COLLECTION_QUANTITY)]
-y_axis_amplitude = np.zeros(COLLECTION_QUANTITY)
 
-# 画布基本信息
-fig = plt.figure(figsize=(12.8, 7.2))
-# ax = plt.subplots()
-line, = plt.plot(x_axis_time, y_axis_amplitude)
-plt.ylim((-1.2, 1.2))
-plt.yticks([-1.2,-1.0,-0.8,-0.6,-0.4,-0.2,0,0.2,0.4,0.6,0.8,1.0,1.2])
-plt.xlabel('Time')
-plt.ylabel('Amplitude')
-plt.title("daq采集信号")
+# 初始化参数：文件路径/采集长度
+f5_path = "D:/HGY_DATA/test_daq/xj.h5"
+length = 3
+chunk_size = (1, length)
+
+# 打开H5文件，如果文件不存在则创建
+with h5py.File(f5_path, 'a') as file:
+    dataset = file.create_dataset('Imaging data_' + time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
+                        , shape=(0, length)
+                        , maxshape=(None, length)
+                        , dtype=float32
+                        , chunks=chunk_size)
+    # 初始化创建字符串属性
+    dataset.attrs['Display Time'] = 0
+    # 生成新数据
+    new_data = (4, 5, 6)
+    current_len = len(dataset)
+    dataset.resize(current_len + 1, axis=0)
+    # 追加写入新数据
+    dataset[current_len:] = new_data
+
+    # 模拟循环实时写入
+    for i in range(10):
+        new_data = (4, 5, 6)
+        current_len = len(dataset)
+        dataset.resize(current_len + 1, axis=0)
+        # 追加写入新数据
+        dataset[current_len:] = new_data
 
 
-# 更新函数，每次调用更新 y 数据
-def update(frame, arg1):
-    # 读取NI_DAQMX
-    with nidaqmx.Task() as task:
-        # 选择指定串口
-        task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
-        # 实时采集并绘图采集点
-        y_axis_amplitude_change = np.round(task.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
-        line.set_ydata(y_axis_amplitude_change)
-        return line,
 
-
-# 设置动画
-ani = FuncAnimation(fig, update, fargs=(3,), interval=100, cache_frame_data=False, repeat=False, blit=True)
-# 展示界面
-plt.show()

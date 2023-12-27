@@ -1,35 +1,41 @@
-import matplotlib.pyplot as plt
-import numpy as np
+import nidaqmx
+import h5py
+import os
+from pylab import *
+from nidaqmx.constants import AcquisitionType, Edge
 from matplotlib.animation import FuncAnimation
+plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
+plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
 
-fig = plt.figure()
-ax = fig.add_subplot(1, 1, 1)
 
-x = np.linspace(0, 2 * np.pi, 5000)
-y = np.exp(-x) * np.cos(2 * np.pi * x)
-line, = ax.plot(x, y, color="cornflowerblue", lw=3)
-ax.set_ylim(-1.1, 1.1)
+# 初始化参数：文件路径/采集长度
+f5_path = "D:/HGY_DATA/test_daq/xj.h5"
+length = 3
 
-# 清空当前帧
-def init():
-    line.set_ydata([np.nan] * len(x))
-    return line,
+# 新建/追加 写文件
+if not os.path.exists(f5_path):
+    file = h5py.File(f5_path, "w")
+else:
+    file = h5py.File(f5_path, 'a')
 
-# 更新新一帧的数据
-def update(frame):
-    line.set_ydata(np.exp(-x) * np.cos(2 * np.pi * x + float(frame)/100))
-    return line,
+dataset = file.create_dataset('Imaging data_' + time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
+                    , data=[(1,2,3)]
+                    , dtype=float32)
+new_data = ([4,5,6])
+dataset[len(new_data):] = new_data
 
-# 调用 FuncAnimation
-ani = FuncAnimation(
-                    plt.figure()
-                   ,update
-                   ,init_func=init
-                   ,frames=200
-                   ,interval=2
-                   ,blit=True
-                   )
-plt.show()
-# ani.save("animation.gif", fps=25, writer="pillow")
+file.close()
 
-### 重构一下，用函数的方式，封装代码
+#
+# file = h5py.File(path, 'w')
+# dataset = file.create_dataset('Imaging data_' + time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()), (4, 6), h5py.h5t.STD_I32BE)
+# # 创建字符串属性
+# dataset.attrs['Display Time'] = 0
+# # 创建整型属性
+# # attr_data = np.zeros((2,))
+# # attr_data[0] = 100
+# # attr_data[1] = 200
+# # dataset.attrs.create('Display Time', attr_data, (2,), 'i')
+# file.close()
+
+
