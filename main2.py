@@ -93,10 +93,9 @@ class WaveformGUI:
         self.option1 = tk.Radiobutton(control_frame, text="Overwrite", variable=self.radio_mode, value="Overwrite")
         self.option2 = tk.Radiobutton(control_frame, text="Append", variable=self.radio_mode, value="Append")
         # radio_var.trace("w", on_selection_change)
+        self.s_b = tk.Button(control_frame, text="Yes", command=self.button3_clicked)
         self.option1.pack()
         self.option2.pack()
-
-        self.s_b = tk.Button(control_frame, text="Yes", command=self.button3_clicked)
         self.s_b.pack()
 
     def button1_clicked(self):
