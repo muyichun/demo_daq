@@ -89,13 +89,16 @@ class WaveformGUI:
         self.s_p_b.pack()
         self.s_p_i.pack()
 
+        # 用一个新控件，把两个单选按钮放一行
+        tmp_frame1 = tk.Frame(control_frame)
         self.radio_mode = tk.StringVar(value="Overwrite")
-        self.option1 = tk.Radiobutton(control_frame, text="Overwrite", variable=self.radio_mode, value="Overwrite")
-        self.option2 = tk.Radiobutton(control_frame, text="Append", variable=self.radio_mode, value="Append")
+        self.option1 = tk.Radiobutton(tmp_frame1, text="Overwrite", variable=self.radio_mode, value="Overwrite")
+        self.option2 = tk.Radiobutton(tmp_frame1, text="Append", variable=self.radio_mode, value="Append")
         # radio_var.trace("w", on_selection_change)
         self.s_b = tk.Button(control_frame, text="Yes", command=self.button3_clicked)
-        self.option1.pack()
-        self.option2.pack()
+        self.option1.pack(side=tk.LEFT)
+        self.option2.pack(side=tk.LEFT)
+        tmp_frame1.pack()
         self.s_b.pack()
 
     def button1_clicked(self):
