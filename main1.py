@@ -1,48 +1,76 @@
-import nidaqmx
+import tkinter as tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
 import numpy as np
-from nidaqmx.constants import AcquisitionType, Edge
-from pylab import *
-from matplotlib.animation import FuncAnimation
-plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
-plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
-
-# 定义初始常量
-COLLECTION_QUANTITY = 5000
-x_axis_time = np.array([i for i in range(COLLECTION_QUANTITY)])
-y_axis_amplitude = np.zeros(COLLECTION_QUANTITY)
 
 
-# 画布基本信息
-fig = plt.figure(figsize=(12.8, 7.2))
-# ax = plt.subplots()
-line, = plt.plot(x_axis_time, y_axis_amplitude)
-plt.ylim((-1.2, 1.2))
-plt.yticks([-1.2,-1.0,-0.8,-0.6,-0.4,-0.2,0,0.2,0.4,0.6,0.8,1.0,1.2])
-plt.xlabel('Time')
-plt.ylabel('Amplitude')
-plt.title("daq采集信号")
+class WaveformGUI:
+    def __init__(self, master):
+        self.master = master
+        self.master.title('Waveform Display')
+
+        # Generate sample data
+        x1 = np.linspace(0, 2*np.pi, 100)
+        y1 = np.sin(x1)
+
+        x2 = np.linspace(-5, 5, 100)
+        y2 = np.exp(-x2**2 / 2) / np.sqrt(2 * np.pi)
+
+        # Create the figure and axes
+        self.fig = plt.figure(figsize=(12.8, 7.2), dpi=100)
+        self.ax1 = self.fig.add_subplot(221)
+        self.ax2 = self.fig.add_subplot(223)
+
+        # Plot the waveforms
+        self.line1, = self.ax1.plot(x1, y1, color='blue', linewidth=2)
+        self.line2, = self.ax2.plot(x2, y2, color='red', linewidth=2)
+
+        # Set axis labels and limits
+        self.ax1.set_xlabel('X-axis 1')
+        self.ax1.set_ylabel('Y-axis 1')
+        self.ax1.set_xlim([0, 2*np.pi])
+        self.ax1.set_ylim([-1.1, 1.1])
+
+        self.ax2.set_xlabel('X-axis 2')
+        self.ax2.set_ylabel('Y-axis 2')
+        self.ax2.set_xlim([-5, 5])
+        self.ax2.set_ylim([0, 1])
+
+        # Create the canvas and pack it into the GUI
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.master)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Create buttons
+        self.button1 = tk.Button(master, text="Button 1", command=self.button1_clicked)
+        self.button1.pack(side=tk.LEFT)
+
+        self.button2 = tk.Button(master, text="Button 2", command=self.button2_clicked)
+        self.button2.pack(side=tk.LEFT)
+
+        # Create input boxes
+        self.input_box1 = tk.Entry(master)
+        self.input_box1.pack(side=tk.LEFT)
+
+        self.input_box2 = tk.Entry(master)
+        self.input_box2.pack(side=tk.LEFT)
+
+        self.input_box3 = tk.Entry(master)
+        self.input_box3.pack(side=tk.LEFT)
+
+        self.input_box4 = tk.Entry(master)
+        self.input_box4.pack(side=tk.LEFT)
+
+    def button1_clicked(self):
+        values = [self.input_box1.get(), self.input_box2.get(), self.input_box3.get(), self.input_box4.get()]
+        print(f"Button 1 clicked with values: {values}")
+
+    def button2_clicked(self):
+        value1 = self.input_box1.get()
+        value2 = self.input_box2.get()
+        print(f"Button 2 clicked with values: {value1}, {value2}")
 
 
-def query_devices():
-    local_system = nidaqmx.system.System.local()
-    driver_version = local_system.driver_version
-    print('DAQmx {0}.{1}.{2}'.format(driver_version.major_version, driver_version.minor_version,
-                                    driver_version.update_version))
-    for device in local_system.devices:
-        print('Device Name: {0}, Product Category: {1}, Product Type: {2}'.format(
-            device.name, device.product_category, device.product_type))
-
-
-with nidaqmx.Task() as task:
-    # 选择指定串口 & TTL
-    task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
-    task.timing.cfg_samp_clk_timing(2E+6, u'', Edge.RISING, sample_mode=AcquisitionType.CONTINUOUS)
-    task.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", Edge.RISING)
-    # task.in_stream.timeout = 200
-    # 实时采集并绘图采集点
-    y_axis_amplitude_change = np.round(task.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
-    line.set_ydata(y_axis_amplitude_change)
-
-# 展示界面
-plt.show()
-# query_devices()
+root = tk.Tk()
+app = WaveformGUI(root)
+root.mainloop()
