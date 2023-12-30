@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter import filedialog
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -83,32 +84,62 @@ class WaveformGUI:
         self.s_t_s_i.pack()
         separator2.pack(fill=tk.X)
 
-        self.s_p_b = tk.Button(control_frame, text="Select a save path", command=self.button1_clicked)
-        self.s_p_i = tk.Entry(control_frame)
-        self.s_p_i.insert(0,"5000")
-        self.s_p_b.pack()
-        self.s_p_i.pack()
-
         # 用一个新控件，把两个单选按钮放一行
         tmp_frame1 = tk.Frame(control_frame)
+        self.s_p_b = tk.Button(tmp_frame1, text="...", command=self.choose_h5_clicked)
+        self.s_p_i = tk.Entry(tmp_frame1)
+        self.s_p_b.pack(side=tk.LEFT)
+        self.s_p_i.pack(side=tk.LEFT)
+        tmp_frame1.pack()
+
+        # 用一个新控件，把两个单选按钮放一行
+        tmp_frame2 = tk.Frame(control_frame)
         self.radio_mode = tk.StringVar(value="Overwrite")
-        self.option1 = tk.Radiobutton(tmp_frame1, text="Overwrite", variable=self.radio_mode, value="Overwrite")
-        self.option2 = tk.Radiobutton(tmp_frame1, text="Append", variable=self.radio_mode, value="Append")
+        self.option1 = tk.Radiobutton(tmp_frame2, text="Overwrite", variable=self.radio_mode, value="Overwrite")
+        self.option2 = tk.Radiobutton(tmp_frame2, text="Append", variable=self.radio_mode, value="Append")
         # radio_var.trace("w", on_selection_change)
-        self.s_b = tk.Button(control_frame, text="Yes", command=self.button3_clicked)
+        self.s_b = tk.Button(control_frame, text="Confirm",fg="green", command=self.export_confirm_clicked)
         self.option1.pack(side=tk.LEFT)
         self.option2.pack(side=tk.LEFT)
-        tmp_frame1.pack()
+        tmp_frame2.pack()
         self.s_b.pack()
 
-    def button1_clicked(self):
-        pass
+        # 启动
+        separator3 = tk.Label(control_frame, text="Bootstrap", bd=1, pady=10, relief=tk.SUNKEN, bg="gray")
+        separator3.pack(fill=tk.X)
+        self.begin_b = tk.Button(control_frame, text="Start", fg="green", command=self.start_clicked)
+        self.begin_b.pack()
 
-    def button2_clicked(self):
-        pass
+    def choose_h5_clicked(self):
+        file_path = filedialog.askopenfilename(
+            parent=root,
+            initialdir="D:/HGY_DATA/test_daq/xj.h5",
+            title="请选择一个h5文件",
+            filetypes=[("hdf5 Files", "*.hdf5"), ("hdf5 Files", "*.h5")]
+        )
+        if file_path:
+            self.s_p_i.delete(0, "end")
+            self.s_p_i.insert(0, file_path)
 
-    def button3_clicked(self):
-        pass
+    def export_confirm_clicked(self):
+        if self.s_b.cget('text') == 'Confirm':
+            self.s_b.config(text="Deny", fg="red")
+            self.option1['state'] = 'disabled'
+            self.option2['state'] = 'disabled'
+            self.s_p_b['state'] = 'disabled'
+            self.s_p_i['state'] = 'disabled'
+        else:
+            self.s_b.config(text="Confirm", fg='green')
+            self.option1['state'] = 'normal'
+            self.option2['state'] = 'normal'
+            self.s_p_b['state'] = 'normal'
+            self.s_p_i['state'] = 'normal'
+
+    def start_clicked(self):
+        if self.begin_b.cget('text') == 'Start':
+            self.begin_b.config(text="Stop", fg="red")
+        else:
+            self.begin_b.config(text="Start", fg='green')
 
 
 root = tk.Tk()
