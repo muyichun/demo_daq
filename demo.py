@@ -1,59 +1,49 @@
-import tkinter as tk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.pyplot as plt
-import numpy as np
+import nidaqmx
+from nidaqmx.constants import AcquisitionType, Edge
+from pylab import *
+from matplotlib.animation import FuncAnimation
+plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
+plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
+__author__ = "Jing Xu"
 
-class WaveformGUI:
-    def __init__(self, master):
-        self.master = master
-        self.master.title('Waveform Display')
 
-        # 创建一个专门用来放置matplotlib画布的frame
-        fig_frame = tk.Frame(master)
-        fig_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+def init():
+    # 画布基本信息
+    x_axis_time = [i for i in range(COLLECTION_QUANTITY)]
+    y_axis_amplitude = np.zeros(COLLECTION_QUANTITY)
+    fig = plt.figure(figsize=(12.8, 7.2))
+    # ax = plt.subplots()
+    line, = plt.plot(x_axis_time, y_axis_amplitude)
+    plt.ylim((-1.2, 1.2))
+    plt.yticks([-1.2,-1.0,-0.8,-0.6,-0.4,-0.2,0,0.2,0.4,0.6,0.8,1.0,1.2])
+    plt.xlabel('Time')
+    plt.ylabel('Amplitude')
+    plt.title("daq采集信号")
+    return fig, line,
 
-        # 创建figure并添加两个子图
-        self.fig = plt.figure(figsize=(5, 8), dpi=100)
-        self.ax1 = self.fig.add_subplot(211)
-        self.ax2 = self.fig.add_subplot(212)
 
-        # 假设已经绘制了两个波形到ax1和ax2上（这里省略具体绘图代码）
+# 更新函数，每次调用更新 y 数据
+def update(frame, arg1):
+    # 读取NI_DAQMX
+    with nidaqmx.Task() as task:
+        # 选择指定串口
+        task.ai_channels.add_ai_voltage_chan("Dev1/ai1")
+        # 选择时钟同步串口
+        task.timing.cfg_samp_clk_timing(2E+6, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
+        task.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", TRIGGER_EDGE)
+        # 实时采集并绘图采集点
+        y_axis_amplitude_change = np.round(task.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
+        line.set_ydata(y_axis_amplitude_change)
+        return line,
 
-        # 将matplotlib图形转换为可以在Tkinter中显示的画布，并将其添加到fig_frame中
-        self.canvas = FigureCanvasTkAgg(self.fig, master=fig_frame)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
 
-        # 创建一个专门用来放置输入框和按钮的frame
-        control_frame = tk.Frame(master)
-        control_frame.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # 创建四个输入框
-        self.input_box1 = tk.Entry(control_frame)
-        self.input_box1.pack()
-
-        self.input_box2 = tk.Entry(control_frame)
-        self.input_box2.pack()
-
-        self.input_box3 = tk.Entry(control_frame)
-        self.input_box3.pack()
-
-        self.input_box4 = tk.Entry(control_frame)
-        self.input_box4.pack()
-
-        # 创建两个按钮
-        button1 = tk.Button(control_frame, text="Button 1", command=self.button1_clicked)
-        button1.pack()
-
-        button2 = tk.Button(control_frame, text="Button 2", command=self.button2_clicked)
-        button2.pack()
-
-    def button1_clicked(self):
-        pass
-
-    def button2_clicked(self):
-        pass
-
-root = tk.Tk()
-app = WaveformGUI(root)
-root.mainloop()
+if __name__ == '__main__':
+    # 外部配置信息
+    COLLECTION_QUANTITY = 5000
+    TRIGGER_EDGE = Edge.RISING
+    # 初始化
+    fig, line, = init()
+    # 通过动画实时采集信息
+    ani = FuncAnimation(fig, update, fargs=(3,), interval=100, cache_frame_data=False, repeat=False, blit=True)
+    # 展示界面
+    plt.show()

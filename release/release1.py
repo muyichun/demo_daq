@@ -9,20 +9,22 @@ from nidaqmx.constants import Edge,AcquisitionType
 import threading
 import time
 
+'''
+2个波形用线程展示，暂时解决不了！
+'''
 class WaveformGUI:
     def update_waveform1(self):
         while True:
             # 更新数据（这里仅作示例，实际应根据你的需求获取实时数据）
-            with nidaqmx.Task() as task:
+            with nidaqmx.Task("task") as task:
                 # 选择指定串口
-                task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
+                task.ai_channels.add_ai_voltage_chan("Dev1/ai0","ch1")
                 # 选择时钟同步串口
-                task.timing.cfg_samp_clk_timing(1E+5, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
+                task.timing.cfg_samp_clk_timing(2E+6, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
                 task.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", TRIGGER_EDGE)
                 # 实时采集并绘图采集点
                 y_axis_amplitude_change1 = np.round(task.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
                 # 在主线程中更新图形以避免与Tkinter GUI冲突
-                print(y_axis_amplitude_change1)
                 self.master.after(100, self.redraw1(y_axis_amplitude_change1))
                 # self.line1.set_ydata(y_axis_amplitude_change1)
                 # self.canvas.draw_idle()
@@ -31,12 +33,12 @@ class WaveformGUI:
     def update_waveform2(self):
         while True:
             # 更新数据（这里仅作示例，实际应根据你的需求获取实时数据）
-            with nidaqmx.Task() as task2:
+            with nidaqmx.Task("task2") as task2:
                 # 选择指定串口
-                task2.ai_channels.add_ai_voltage_chan("Dev1/ai1")
+                task2.ai_channels.add_ai_voltage_chan("Dev1/ai1", "ch2")
                 # 选择时钟同步串口
-                task2.timing.cfg_samp_clk_timing(1E+5, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
-                task2.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", TRIGGER_EDGE)
+                task2.timing.cfg_samp_clk_timing(2E+6, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
+                # task2.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", TRIGGER_EDGE)
                 # 实时采集并绘图采集点
                 y_axis_amplitude_change2 = np.round(task2.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
                 # 在主线程中更新图形以避免与Tkinter GUI冲突

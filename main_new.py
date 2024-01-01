@@ -25,9 +25,9 @@ def init():
 # 更新函数，每次调用更新 y 数据
 def update(frame, arg1):
     # 读取NI_DAQMX
-    with nidaqmx.Task() as task:
+    with nidaqmx.Task("1") as task:
         # 选择指定串口
-        task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
+        task.ai_channels.add_ai_voltage_chan("Dev1/ai1", "ch1")
         # 选择时钟同步串口
         task.timing.cfg_samp_clk_timing(2E+6, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
         task.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", TRIGGER_EDGE)
