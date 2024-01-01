@@ -73,18 +73,16 @@ class WaveformGUI:
         self.canvas.draw_idle()  # 绘制新的图形
 
 
-
     def __init__(self, master):
         self.master = master
         self.master.title('daq采集信号')
         self.collection_quantity = COLLECTION_QUANTITY
         self.chunk_size = (1, COLLECTION_QUANTITY)
 
-        # 1.Create a frame for matplotlib canvas
-        fig_frame = tk.Frame(master)
+        # 1. 创建 a frame for matplotlib canvas
+        fig_frame = tk.Frame(self.master)
         fig_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
-        # Generate sample data and create figure
         x1 = [i for i in range(COLLECTION_QUANTITY)]
         y1 = np.zeros(COLLECTION_QUANTITY)
 
@@ -96,13 +94,12 @@ class WaveformGUI:
         self.ax1.set_ylabel('Amplitude')
         self.ax1.set_ylim((-1.2, 1.2))
         self.ax1.set_yticks([-1.2, -1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2])
-
         # Add matplotlib canvas to the frame
         self.canvas = FigureCanvasTkAgg(self.fig, master=fig_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
-        # 2.Create a frame for input boxes and buttons
+        # 2. Create a frame for input boxes and buttons
         control_frame = tk.Frame(master)
         control_frame.pack(side=tk.TOP, fill=tk.Y)
         separator1 = tk.Label(control_frame, text="Custom", bd=1, pady=10, relief=tk.SUNKEN, bg="gray")
@@ -195,12 +192,15 @@ class WaveformGUI:
             self.s_b['state'] = 'disabled'
             self.collection_quantity = int(self.s_p_c_i.get())
             self.chunk_size = (1, self.collection_quantity)
-            self.line1.set_xdata([i for i in range(self.collection_quantity)])
+            x = [i for i in range(self.collection_quantity)]
+            y = np.zeros(self.collection_quantity)
+            # 重绘图形
             self.ax1.clear()
-            self.line1, = self.ax1.plot([i for i in range(self.collection_quantity)], np.zeros(self.collection_quantity), color='blue', linewidth=2)
-            # self.ax1.relim()  # 更新数据范围限制
-            # self.ax1.autoscale_view(True, True, True)  # 自动缩放视图
-
+            self.line1, = self.ax1.plot(x, y, color='blue', linewidth=2)
+            self.ax1.set_xlabel('Time')
+            self.ax1.set_ylabel('Amplitude')
+            self.ax1.set_ylim((-1.2, 1.2))
+            self.ax1.set_yticks([-1.2, -1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2])
             # 创建并启动更新线程
             self.stop_event = threading.Event()
             self.update_thread1 = threading.Thread(target=self.update_waveform1, daemon=True)
