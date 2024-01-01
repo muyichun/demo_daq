@@ -8,6 +8,9 @@ import nidaqmx
 from nidaqmx.constants import Edge,AcquisitionType
 import threading
 import time
+plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
+plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
+__author__ = "Jing Xu"
 
 '''
 2个波形用线程展示，暂时解决不了！

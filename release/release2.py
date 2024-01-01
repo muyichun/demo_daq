@@ -10,6 +10,9 @@ import threading
 import time
 import h5py
 import os
+plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
+plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
+__author__ = "Jing Xu"
 
 '''
 改成1个波形，用子线程更新展示
