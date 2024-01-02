@@ -23,7 +23,7 @@ class WaveformGUI:
             with nidaqmx.Task("task") as task:
                 # 选择指定串口
                 if index == 0:
-                    task.ai_channels.add_ai_voltage_chan("Dev1/ai0","ch1")
+                    task.ai_channels.add_ai_voltage_chan("Dev1/ai0","ch0")
                 else:
                     task.ai_channels.add_ai_voltage_chan("Dev1/ai1", "ch1")
                 # 选择时钟同步串口
