@@ -13,51 +13,27 @@ plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
 __author__ = "Jing Xu"
 
 '''
-2个波形用线程展示，暂时解决不了！
+2个波形用线程展示
 '''
 class WaveformGUI:
-    def update_waveform1(self):
+    def update_waveform(self):
         while True:
             # 更新数据（这里仅作示例，实际应根据你的需求获取实时数据）
-            with nidaqmx.Task("task") as task:
+            with nidaqmx.Task() as task:
                 # 选择指定串口
-                task.ai_channels.add_ai_voltage_chan("Dev1/ai0","ch1")
+                task.ai_channels.add_ai_voltage_chan("Dev1/ai0:1")
                 # 选择时钟同步串口
-                task.timing.cfg_samp_clk_timing(2E+6, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
+                task.timing.cfg_samp_clk_timing(5E+5, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
                 task.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", TRIGGER_EDGE)
                 # 实时采集并绘图采集点
-                y_axis_amplitude_change1 = np.round(task.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
+                y_axis_amplitude_change = np.round(task.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
                 # 在主线程中更新图形以避免与Tkinter GUI冲突
-                self.master.after(100, self.redraw1(y_axis_amplitude_change1))
-                # self.line1.set_ydata(y_axis_amplitude_change1)
-                # self.canvas.draw_idle()
-                time.sleep(0.1)
+                self.master.after(0, self.redraw(y_axis_amplitude_change))
 
-    def update_waveform2(self):
-        while True:
-            # 更新数据（这里仅作示例，实际应根据你的需求获取实时数据）
-            with nidaqmx.Task("task2") as task2:
-                # 选择指定串口
-                task2.ai_channels.add_ai_voltage_chan("Dev1/ai1", "ch2")
-                # 选择时钟同步串口
-                task2.timing.cfg_samp_clk_timing(2E+6, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
-                # task2.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", TRIGGER_EDGE)
-                # 实时采集并绘图采集点
-                y_axis_amplitude_change2 = np.round(task2.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
-                # 在主线程中更新图形以避免与Tkinter GUI冲突
-                self.master.after(100, self.redraw2(y_axis_amplitude_change2))
-                # self.line2.set_ydata(y_axis_amplitude_change2)
-                # self.canvas.draw_idle()
-                time.sleep(0.1)
-
-    def redraw1(self, y_axis_amplitude_change1):
-        self.line1.set_ydata(y_axis_amplitude_change1)
+    def redraw(self, y_axis_amplitude_change):
+        self.line1.set_ydata(y_axis_amplitude_change[0])
+        self.line2.set_ydata(y_axis_amplitude_change[1])
         self.canvas.draw_idle()  # 绘制新的图形
-
-    def redraw2(self, y_axis_amplitude_change2):
-        self.line2.set_ydata(y_axis_amplitude_change2)
-        self.canvas.draw_idle()  # 绘制新的图形
-
 
     def __init__(self, master):
         self.master = master
@@ -95,10 +71,8 @@ class WaveformGUI:
         self.canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
 
         # 创建并启动更新线程
-        self.update_thread1 = threading.Thread(target=self.update_waveform1, daemon=True)
-        self.update_thread1.start()
-        self.update_thread2 = threading.Thread(target=self.update_waveform2, daemon=True)
-        self.update_thread2.start()
+        self.update_thread = threading.Thread(target=self.update_waveform, daemon=True)
+        self.update_thread.start()
 
         # 2.Create a frame for input boxes and buttons
         control_frame = tk.Frame(master)
@@ -200,7 +174,7 @@ class WaveformGUI:
 if __name__ == '__main__':
     # 外部配置信息
     COLLECTION_QUANTITY = 5000
-    TRIGGER_EDGE = Edge.FALLING
+    TRIGGER_EDGE = Edge.RISING
 
     root = tk.Tk()
     app = WaveformGUI(root)

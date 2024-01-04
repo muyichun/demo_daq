@@ -8,6 +8,10 @@ plt.rcParams["axes.unicode_minus"] = False  # 正常显示负号
 __author__ = "Jing Xu"
 
 
+'''
+测试读取2个波，删
+'''
+
 def init():
     # 画布基本信息
     x_axis_time = [i for i in range(COLLECTION_QUANTITY)]
@@ -26,11 +30,11 @@ def init():
 # 更新函数，每次调用更新 y 数据
 def update(frame, arg1):
     # 读取NI_DAQMX
-    with nidaqmx.Task("1") as task:
+    with nidaqmx.Task() as task:
         # 选择指定串口
-        task.ai_channels.add_ai_voltage_chan("Dev1/ai0", "ch0")
+        task.ai_channels.add_ai_voltage_chan("Dev1/ai0:1")
         # 选择时钟同步串口
-        task.timing.cfg_samp_clk_timing(2E+6, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
+        task.timing.cfg_samp_clk_timing(5E+5, "", TRIGGER_EDGE, AcquisitionType.CONTINUOUS)
         task.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev1/PFI0", TRIGGER_EDGE)
         # 实时采集并绘图采集点
         y_axis_amplitude_change = np.round(task.read(number_of_samples_per_channel=COLLECTION_QUANTITY), 5)
@@ -48,4 +52,3 @@ if __name__ == '__main__':
     ani = FuncAnimation(fig, update, fargs=(3,), interval=100, cache_frame_data=False, repeat=False, blit=True)
     # 展示界面
     plt.show()
-
