@@ -24,6 +24,12 @@ class WaveformGUI:
     phase_shift = 0
     amp_range = 0
     amp_val = 0
+    time_index = 0
+
+    index = 0
+    xxx1 = np.array
+    xxx2 = np.array
+    xxx3 = np.array
     def amplitude_correction(self, data, mod_freq, sample_rate):
         data_f = np.fft.rfft(data)
         main_sine_ind = int(mod_freq * len(data) / sample_rate)
@@ -241,22 +247,22 @@ class WaveformGUI:
 
         # 第六张实时距离变化
         peak_positions = self.get_peak_positions(self.amp_range, self.amp_val, threshold=0.5)
-        # print('Peaks maximums are at', peak_positions)
+
         data_all_corr = self.amplitude_correction(y_axis_amplitude_change1, mod_freq, sample_rate)
         phase = self.demodulate_phase(data_all_corr, range_channel=peak_positions[0])
-        t = np.linspace(0, len(phase) / mod_freq, len(phase))
-        print(t)
+
         wavelength = 1550
         n = 1.0
         path = phase * wavelength / (2 * np.pi * 2 * n)
         # ##plot displacement in micrometer
         displacement = path / 2
-        self.ax6.clear()
-        self.ax6.scatter(t, displacement / 1e3)
+        # self.ax6.clear()
+        self.ax6.scatter(self.time_index * 1/mod_freq, displacement / 1e3)
+        self.time_index += 1
         self.ax6.set_ylabel(r"Displacement [$\mu$m]")
         self.ax6.set_xlabel('Time [s]')
-        self.ax6.set_ylim((-1.2, 1.2))
-        self.ax6.set_yticks([-1.2, -1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2])
+        self.ax6.set_ylim((-2500, 2500))
+        # self.ax6.set_yticks([-1.2, -1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2])
 
         self.canvas.draw_idle()  # 绘制新的图形
         # self.ax1.autoscale_view()  # 自动调整坐标轴的缩放
