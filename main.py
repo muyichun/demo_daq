@@ -5,8 +5,9 @@ import time
 import scipy.signal as signal
 from scipy import signal
 import statsmodels.api as sm
+from scipy.signal import find_peaks, peak_prominences
 
-def amplitude_correction(data,mod_freq,sample_rate):
+def amplitude_correction(data, mod_freq, sample_rate):
     data_f = np.fft.rfft(data)
     main_sine_ind = int(mod_freq*len(data)/sample_rate)
     main_sine_f = np.zeros_like(data_f)
@@ -16,7 +17,6 @@ def amplitude_correction(data,mod_freq,sample_rate):
     data_corr = data - main_sine
     return data_corr
 def generate_carrier(data, phase0, demod_ph_carr_amp):
-
     phi0 = np.deg2rad(phase0)
     sec_harm_amp = harm_amp
     sec_harm_phase = np.deg2rad(harm_phase)  # rad
@@ -43,7 +43,6 @@ def generate_window(data, phase0, sigma=0.0225):
 
 
 def get_range_view(data, dpca_min=1, dpca_max=150, res=1, sigma=0.05, stop_flag=None):
-
     dpca_range = np.arange(dpca_min, dpca_max, float(res))
     dpca_amp = np.zeros_like(dpca_range)
     window = generate_window(data, phase_shift, sigma=sigma)
@@ -56,12 +55,10 @@ def get_range_view(data, dpca_min=1, dpca_max=150, res=1, sigma=0.05, stop_flag=
         q = data*carrier*window
         dpca_amp[i] = np.abs(np.sum(q)) / (len(data) / mod_table_length)
         i += 1
-
     return dpca_range, dpca_amp
 
 def calc_map(data, dpca_min=20, dpca_max=150, dpca_res=1, sigma=0.05,
                  phase_delay_min=80, phase_delay_max=110, phase_delay_res=0.1, stop_flag=None):
-
     dpca_range = np.arange(dpca_min, dpca_max, float(dpca_res))
     phase_delay_range = np.arange(phase_delay_min, phase_delay_max, float(phase_delay_res))
 
@@ -132,35 +129,38 @@ def average(x):
     filtered_x = np.mean(x_reshape, axis=1)
     return filtered_x
 
-# 1. set system parameters
+
+
+
+
+# 1. 初始化参数
 sample_rate = 2e6
 mod_freq = 5e3
-# 400
 mod_table_length = int(sample_rate/mod_freq)
-print(mod_table_length)
 # 2. 读h5文件
-data_name = r'D:\HGY_DATA\test_daq\displacement_test_1_5khz_2mm.hdf5'
+# data_name = r'D:\HGY_DATA\test_daq\displacement_test_1_5khz_2mm.hdf5'
+data_name = r'D:\HGY_DATA\test_daq\bak_displacement_test_1_5khz_2mm.hdf5'
 with h5py.File(data_name, 'r') as f:
-    print(list(f.keys()))
     dataset_name = list(f.keys())
     my_data_raw = [None] * len(dataset_name)
-    print(len(dataset_name))
     for num_dset in range(len(dataset_name)):
         my_data_raw [num_dset] = f.get(dataset_name[num_dset])[()]
     f.close()
-# 3. 打印原始波形
+# [可选]打印原始波形
 data_to_run = my_data_raw[0]
 test_data=data_to_run[0]
 print(data_to_run.shape)
 # plt.plot(test_data)
 # plt.show()
-# 4. amplitude_correction
+# 3. 单独计算第一个点：amplitude_correction
+data_to_run = my_data_raw[0]
+test_data = data_to_run[0]
 data_corr = amplitude_correction(test_data,mod_freq,sample_rate)
-# 5. set processing parameters
+# 4. set processing parameters
 harm_amp = 0
 harm_phase = 0
 phase_delay_range, dpca_range, map_values = calc_map(test_data, dpca_min=5, dpca_max=80, dpca_res=1, sigma=0.07,
-                                                         phase_delay_min=20, phase_delay_max=180, phase_delay_res=1)
+                                                         phase_delay_min=60, phase_delay_max=180, phase_delay_res=1)
 # dx = (phase_delay_range[1] - phase_delay_range[0]) / 2.
 # dy = (dpca_range[1] - dpca_range[0]) / 2.
 # extent = [phase_delay_range[0] - dx, phase_delay_range[-1] + dx, dpca_range[-1] + dy, dpca_range[0] - dy]
@@ -169,52 +169,48 @@ phase_delay_range, dpca_range, map_values = calc_map(test_data, dpca_min=5, dpca
 # plt.xlabel('Phase Delay / ...° ')
 # plt.colorbar()
 # plt.show()
-# 6.
+# 5. 找到所有顶点，并拿到最对称的顶点线：peek line
 sum_map = np.sum(map_values, axis=0)
-# plt.plot(sum_map)
 data_y = sum_map
-# Find peaks(max).
+print(sum_map.shape)
 peak_indexes = signal.argrelextrema(data_y, np.greater)
 peak_indexes = peak_indexes[0]
 print(peak_indexes)
-print(peak_indexes.shape)
-# 7. peek line
-print(peak_indexes.shape)
-# plt.plot(sum_map)
-des_ind = peak_indexes.shape[0]//2
-# index = peak_indexes[des_ind]
+peaks, _ = find_peaks(sum_map)
+prominences = peak_prominences(sum_map, peaks)[0]
+prominent_peak_index = peaks[np.argmax(prominences)]  # Index of the most prominent peak
+index = prominent_peak_index
 # x_ver=[index,index]
 # y_ver=[0,sum_map.max()]
+# plt.plot(sum_map)
 # plt.plot(x_ver,y_ver)
-# print(phase_delay_range[peak_indexes[des_ind]])
 # plt.show()
-# 8. 得到phase_shift最关键
-phase_shift = phase_delay_range[peak_indexes[des_ind]]
+# exit()
+# print(phase_delay_range[peak_indexes[des_ind]])
+# 6. 得到phase_shift最关键
+phase_shift = phase_delay_range[index]
 amp_range, amp_val = get_range_view(data_corr,dpca_min=5, dpca_max=180, res=0.1, sigma=0.05)
-# amp_range, amp_val = get_range_view(test_data,dpca_min=5, dpca_max=180, res=0.1, sigma=0.05)
 # plt.plot(amp_range, amp_val)
 # plt.xlabel('Demodulation Phase Carrier Amplitude / rad')
 # plt.ylabel('Amplitude / a.u.')
 # plt.show()
-# 9.
+
+
+# 7. 继续相关处理
 peak_positions = get_peak_positions(amp_range, amp_val, threshold=0.5)
 print('Peaks maximums are at', peak_positions)
-# 10. 计算所有数据，相位
+# 8. 计算所有数据，相位, 并显示最终结果show in displacement
 data_all = np.reshape(data_to_run, data_to_run.shape[0]*data_to_run.shape[1])
-data_all_corr = amplitude_correction(data_all,mod_freq,sample_rate)
+data_all_corr = amplitude_correction(data_all, mod_freq, sample_rate)
 phase = demodulate_phase(data_all_corr, range_channel = peak_positions[0])
+print(phase, "xxxxx")
 t = np.linspace(0, len(phase)/mod_freq, len(phase))
-# plt.plot(t, phase)
-# plt.xlabel('Time / s')
-# plt.ylabel('Phase / rad')
-# plt.show()
-# 11. 最终结果
-#show in displacement
 wavelength = 1550
 n = 1.0
 path = phase*wavelength/(2*np.pi*2*n)
 # ##plot displacement in micrometer
 displacement =path/2
+print(displacement)
 plt.plot(t, displacement/1e3)
 plt.ylabel(r"Displacement [$\mu$m]")
 plt.xlabel('Time [s]')
