@@ -139,7 +139,8 @@ mod_freq = 5e3
 mod_table_length = int(sample_rate/mod_freq)
 # 2. 读h5文件
 # data_name = r'D:\HGY_DATA\test_daq\displacement_test_1_5khz_2mm.hdf5'
-data_name = r'D:\HGY_DATA\test_daq\bak_displacement_test_1_5khz_2mm.hdf5'
+# data_name = r'D:\HGY_DATA\test_daq\bak_displacement_test_1_5khz_2mm.hdf5'
+data_name = r'D:\HGY_DATA\test_daq\xj.h5'
 with h5py.File(data_name, 'r') as f:
     dataset_name = list(f.keys())
     my_data_raw = [None] * len(dataset_name)
@@ -147,13 +148,13 @@ with h5py.File(data_name, 'r') as f:
         my_data_raw [num_dset] = f.get(dataset_name[num_dset])[()]
     f.close()
 # [可选]打印原始波形
-data_to_run = my_data_raw[0]
-test_data=data_to_run[0]
-print(data_to_run.shape)
+# data_to_run = my_data_raw[1]
+# test_data=data_to_run[0]
+# print(data_to_run.shape)
 # plt.plot(test_data)
 # plt.show()
 # 3. 单独计算第一个点：amplitude_correction
-data_to_run = my_data_raw[0]
+data_to_run = my_data_raw[1]
 test_data = data_to_run[0]
 data_corr = amplitude_correction(test_data,mod_freq,sample_rate)
 # 4. set processing parameters
@@ -202,15 +203,24 @@ print('Peaks maximums are at', peak_positions)
 # 8. 计算所有数据，相位, 并显示最终结果show in displacement
 data_all = np.reshape(data_to_run, data_to_run.shape[0]*data_to_run.shape[1])
 data_all_corr = amplitude_correction(data_all, mod_freq, sample_rate)
-phase = demodulate_phase(data_all_corr, range_channel = peak_positions[0])
-print(phase, "xxxxx")
-t = np.linspace(0, len(phase)/mod_freq, len(phase))
+phase = demodulate_phase(data_all_corr, range_channel=peak_positions[0])
+# print(len(data_to_run))
+
+# phase_list = []
+# phase_tmp = []
+# for i in range(1000):
+#     d = amplitude_correction(data_to_run[i], mod_freq, sample_rate)
+#     phase = demodulate_phase(d, range_channel = peak_positions[0])
+#     phase_list.extend(phase)
+#     phase_tmp = np.unwrap(phase_list)
+
+t = np.linspace(0, len(phase) / mod_freq, len(phase))
+
 wavelength = 1550
 n = 1.0
 path = phase*wavelength/(2*np.pi*2*n)
 # ##plot displacement in micrometer
 displacement =path/2
-print(displacement)
 plt.plot(t, displacement/1e3)
 plt.ylabel(r"Displacement [$\mu$m]")
 plt.xlabel('Time [s]')

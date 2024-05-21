@@ -27,9 +27,7 @@ class WaveformGUI:
 
     index = 0
     phase_list = []
-    xxx1 = np.array
-    xxx2 = np.array
-    xxx3 = np.array
+    phase_flag5 = 0
     def amplitude_correction(self, data, mod_freq, sample_rate):
         data_f = np.fft.rfft(data)
         main_sine_ind = int(mod_freq * len(data) / sample_rate)
@@ -173,7 +171,7 @@ class WaveformGUI:
                         task.ai_channels.add_ai_voltage_chan(self.p_c_i1.get())
                         # 选择时钟同步串口
                         active_edge = TRIGGER_EDGE[self.s_e_i['values'].index(self.s_e_i.get())]
-                        task.timing.cfg_samp_clk_timing(2E+6, "", active_edge, AcquisitionType.CONTINUOUS)
+                        task.timing.cfg_samp_clk_timing(sample_rate, "", active_edge, AcquisitionType.CONTINUOUS)
                         task.triggers.start_trigger.cfg_dig_edge_start_trig(self.s_t_s_i.get(), active_edge)
                         # 实时采集并绘图采集点
                         y_axis_amplitude_change1 = task.read(number_of_samples_per_channel=self.collection_quantity)
@@ -199,17 +197,12 @@ class WaveformGUI:
                     y_axis_amplitude_change1 = task.read(number_of_samples_per_channel=self.collection_quantity)
                     # 在主线程中更新图形以避免与Tkinter GUI冲突
                     self.master.after(0, self.redraw1(y_axis_amplitude_change1))
-        # stop清零复原
-        self.master.after(0, self.redraw1(np.zeros(self.collection_quantity)))
 
-
+    test_count = 0
     def redraw1(self, y_axis_amplitude_change1):
         # 首次采集需要预处理
         if self.first_flag:
             self.first_flag = False
-            # 第二张图
-            self.line2.set_ydata(y_axis_amplitude_change1)
-            self.ax2.relim()  # 重新计算数据边界
             # 第三张图
             data_corr = self.amplitude_correction(y_axis_amplitude_change1, mod_freq, sample_rate)
             phase_delay_range, dpca_range, map_values = self.calc_map(y_axis_amplitude_change1, dpca_min=5, dpca_max=80, dpca_res=1,
@@ -245,15 +238,23 @@ class WaveformGUI:
         self.line1.set_ydata(y_axis_amplitude_change1)
         self.ax1.relim()  # 重新计算数据边界
 
+        # self.test_count+=1
+        # print(time.time(), self.test_count)
+
         # 第六张实时距离变化
+        self.phase_flag5 += 1
         peak_positions = self.get_peak_positions(self.amp_range, self.amp_val, threshold=0.5)
 
         data_all_corr = self.amplitude_correction(y_axis_amplitude_change1, mod_freq, sample_rate)
         phase = self.demodulate_phase(data_all_corr, range_channel=peak_positions[0])
         self.phase_list.extend(phase)
-        phase_tmp = np.unwrap(self.phase_list)
-        t = np.linspace(0, len(phase_tmp) / mod_freq, len(phase_tmp))
 
+        if(self.phase_flag5 % 5 != 0):
+            return
+
+        phase_tmp = np.unwrap(self.phase_list)
+        # t = np.linspace(0, len(phase_tmp) / mod_freq, len(phase_tmp))
+        t = np.linspace(0, len(phase_tmp) / mod_freq, len(phase_tmp))
 
         wavelength = 1550
         n = 1.0
@@ -264,7 +265,6 @@ class WaveformGUI:
         self.ax6.plot(t, displacement / 1e3)
         self.ax6.set_ylabel(r"Displacement [$\mu$m]")
         self.ax6.set_xlabel('Time [s]')
-
         self.canvas.draw_idle()  # 绘制新的图形
         # self.ax1.autoscale_view()  # 自动调整坐标轴的缩放
 
@@ -280,7 +280,6 @@ class WaveformGUI:
 
         self.fig = plt.figure(figsize=(10.8, 7.2), dpi=100)
         self.ax1 = self.fig.add_subplot(231)
-        self.ax2 = self.fig.add_subplot(232)
         self.ax3 = self.fig.add_subplot(233)
         self.ax4 = self.fig.add_subplot(234)
         self.ax5 = self.fig.add_subplot(235)
@@ -384,22 +383,21 @@ class WaveformGUI:
             self.s_b['state'] = 'disabled'
             # 图1，初始坐标轴
             self.first_flag = True
+            self.index = 0
+            self.phase_list = []
+            self.ax1.clear()
+            self.ax3.clear()
+            self.ax4.clear()
+            self.ax5.clear()
+            self.ax6.clear()
             self.collection_quantity = int(self.s_p_c_i.get())
             self.chunk_size = (1, self.collection_quantity)
             x = [i for i in range(self.collection_quantity)]
             y = np.zeros(self.collection_quantity)
             # 重绘图形
-            self.ax1.clear()
-            self.ax2.clear()
-            self.ax3.clear()
-            self.ax4.clear()
-            self.ax5.clear()
-            self.ax6.clear()
             self.line1, = self.ax1.plot(x, y, color='blue', linewidth=1)
             self.ax1.set_xlabel('Time')
             self.ax1.set_ylabel('Amplitude')
-            self.line2, = self.ax2.plot(x, y, color='blue', linewidth=1)
-            # self.line6, = self.ax2.plot(x, y, color='blue', linewidth=1)
             # 创建并启动更新线程
             self.stop_event = threading.Event()
             self.update_thread1 = threading.Thread(target=self.update_waveform1, daemon=True)
@@ -408,6 +406,7 @@ class WaveformGUI:
             self.stop_event.set()
             self.begin_b.config(text="Start", fg='green')
             self.s_b['state'] = 'normal'
+
 
 if __name__ == '__main__':
     # 默认参数
