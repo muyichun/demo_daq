@@ -24,9 +24,9 @@ class WaveformGUI:
     phase_shift = 0
     amp_range = 0
     amp_val = 0
-    time_index = 0
 
     index = 0
+    phase_list = []
     xxx1 = np.array
     xxx2 = np.array
     xxx3 = np.array
@@ -226,7 +226,7 @@ class WaveformGUI:
             sum_map = np.sum(map_values, axis=0)
             peak_indexes = signal.argrelextrema(sum_map, np.greater)
             peak_indexes = peak_indexes[0]
-            print(peak_indexes)
+            # print(peak_indexes)
             peaks, _ = find_peaks(sum_map)
             prominences = peak_prominences(sum_map, peaks)[0]
             prominent_peak_index = peaks[np.argmax(prominences)]  # Index of the most prominent peak
@@ -250,19 +250,20 @@ class WaveformGUI:
 
         data_all_corr = self.amplitude_correction(y_axis_amplitude_change1, mod_freq, sample_rate)
         phase = self.demodulate_phase(data_all_corr, range_channel=peak_positions[0])
+        self.phase_list.extend(phase)
+        phase_tmp = np.unwrap(self.phase_list)
+        t = np.linspace(0, len(phase_tmp) / mod_freq, len(phase_tmp))
+
 
         wavelength = 1550
         n = 1.0
-        path = phase * wavelength / (2 * np.pi * 2 * n)
+        path = phase_tmp * wavelength / (2 * np.pi * 2 * n)
         # ##plot displacement in micrometer
         displacement = path / 2
-        # self.ax6.clear()
-        self.ax6.scatter(self.time_index * 1/mod_freq, displacement / 1e3)
-        self.time_index += 1
+        self.ax6.clear()
+        self.ax6.plot(t, displacement / 1e3)
         self.ax6.set_ylabel(r"Displacement [$\mu$m]")
         self.ax6.set_xlabel('Time [s]')
-        self.ax6.set_ylim((-2500, 2500))
-        # self.ax6.set_yticks([-1.2, -1.0, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2])
 
         self.canvas.draw_idle()  # 绘制新的图形
         # self.ax1.autoscale_view()  # 自动调整坐标轴的缩放
